@@ -14,6 +14,7 @@ LATITUDE, LONGITUDE = range(2)
 
 # Link handed out for any coordinates that are not the secret pair
 DEFAULT_LINK = "https://youtube.com/shorts/yoPjP4K1x2g?si=i-LIRvSCIvewzoze"
+DEFAULT_DESCRIPTION = "You are actually wrong but here leaked video of lilly dancing"
 
 # The one coordinate pair that unlocks the next clue
 SECRET_LATITUDE = 43.91522763578687
@@ -82,7 +83,8 @@ async def process_longitude(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         else:
             await update.message.reply_text(
                 "🎉 Coordinates accepted! Here is your link:\n"
-                f"{DEFAULT_LINK}"
+                f"{DEFAULT_LINK}\n\n"
+                f"{DEFAULT_DESCRIPTION}"
             )
         context.user_data.clear()
         return ConversationHandler.END
