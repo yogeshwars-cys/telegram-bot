@@ -12,6 +12,19 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 # Define conversation states
 LATITUDE, LONGITUDE = range(2)
 
+# Link handed out for any coordinates that are not the secret pair
+DEFAULT_LINK = "https://youtube.com/shorts/yoPjP4K1x2g?si=i-LIRvSCIvewzoze"
+
+# The one coordinate pair that unlocks the next clue
+SECRET_LATITUDE = 43.91522763578687
+SECRET_LONGITUDE = -113.61173108716417
+SECRET_LINK = "https://gistpad.com/catflag-84"
+SECRET_DESCRIPTION = "go with 37 with the number where lilly is locked"
+
+# Nobody types 17 decimals by hand, so accept anything within ~11 metres.
+# Lower this for a stricter match, raise it to be more forgiving.
+COORDINATE_TOLERANCE = 0.0001
+
 # Helper function to check if the input is a valid coordinate number
 def is_valid_coordinate(text: str) -> bool:
     try:
@@ -19,6 +32,13 @@ def is_valid_coordinate(text: str) -> bool:
         return True
     except ValueError:
         return False
+
+def is_secret_location(latitude: str, longitude: str) -> bool:
+    """True when the entered pair matches the secret coordinates closely enough."""
+    return (
+        abs(float(latitude) - SECRET_LATITUDE) <= COORDINATE_TOLERANCE
+        and abs(float(longitude) - SECRET_LONGITUDE) <= COORDINATE_TOLERANCE
+    )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Starts the conversation and asks for latitude."""
@@ -52,11 +72,18 @@ async def process_longitude(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if is_valid_coordinate(user_input):
         context.user_data['longitude'] = user_input
 
-        # Success response sending the requested short link
-        await update.message.reply_text(
-            "🎉 Coordinates accepted! Here is your link:\n"
-            "https://www.youtube.com/shorts/St5pdFmoFe4"
-        )
+        # The secret pair unlocks a different link plus its clue
+        if is_secret_location(context.user_data['latitude'], user_input):
+            await update.message.reply_text(
+                "🎉 Coordinates accepted! Here is your link:\n"
+                f"{SECRET_LINK}\n\n"
+                f"{SECRET_DESCRIPTION}"
+            )
+        else:
+            await update.message.reply_text(
+                "🎉 Coordinates accepted! Here is your link:\n"
+                f"{DEFAULT_LINK}"
+            )
         context.user_data.clear()
         return ConversationHandler.END
     else:
