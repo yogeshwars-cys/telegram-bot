@@ -5,6 +5,8 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 # Enable logging to see errors in the console/log file
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+# httpx logs full request URLs at INFO, and Telegram URLs contain the bot token
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 # Define conversation states
 LATITUDE, LONGITUDE = range(2)
