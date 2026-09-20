@@ -28,3 +28,16 @@ python bot.py
 Only one instance can poll a given token at a time. Stop any other copy
 (PythonAnywhere console, local run) or you'll get `Conflict: terminated by
 other getUpdates request` errors.
+
+## Troubleshooting
+
+**`/start` works once, then the bot goes silent.**
+The conversation is still open on an earlier `/start`, so the flow is waiting for a
+coordinate, not a command. `allow_reentry=True` on the `ConversationHandler` makes a
+repeat `/start` restart the flow; `/cancel` also closes it. Without that flag the entry
+point is never re-checked while a conversation is active, and the command is dropped.
+
+**`Conflict: terminated by other getUpdates request` in the logs.**
+Two processes are polling the same token and each one steals half the updates, so replies
+land in whichever copy has no conversation state. Leave exactly one running — check for an
+old Railway deployment, a second service or replica, and any local or PythonAnywhere copy.
