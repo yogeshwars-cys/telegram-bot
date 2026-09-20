@@ -22,10 +22,6 @@ SECRET_LONGITUDE = -113.61173108716417
 SECRET_LINK = "https://gistpad.com/catflag-84"
 SECRET_DESCRIPTION = "go with 37 with the number where lilly is locked"
 
-# Nobody types 17 decimals by hand, so accept anything within ~11 metres.
-# Lower this for a stricter match, raise it to be more forgiving.
-COORDINATE_TOLERANCE = 0.0001
-
 # Helper function to check if the input is a valid coordinate number
 def is_valid_coordinate(text: str) -> bool:
     try:
@@ -35,11 +31,12 @@ def is_valid_coordinate(text: str) -> bool:
         return False
 
 def is_secret_location(latitude: str, longitude: str) -> bool:
-    """True when the entered pair matches the secret coordinates closely enough."""
-    return (
-        abs(float(latitude) - SECRET_LATITUDE) <= COORDINATE_TOLERANCE
-        and abs(float(longitude) - SECRET_LONGITUDE) <= COORDINATE_TOLERANCE
-    )
+    """True only for the exact secret coordinates.
+
+    Both numbers must be entered in full; a shortened or rounded version
+    such as 43.9152 does not count.
+    """
+    return float(latitude) == SECRET_LATITUDE and float(longitude) == SECRET_LONGITUDE
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Starts the conversation and asks for latitude."""
