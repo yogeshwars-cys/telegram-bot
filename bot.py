@@ -13,7 +13,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 LATITUDE, LONGITUDE = range(2)
 
 # Link handed out for any coordinates that are not the secret pair
-DEFAULT_LINK = "https://youtube.com/shorts/yoPjP4K1x2g?si=i-LIRvSCIvewzoze"
+DEFAULT_LINK = "https://youtu.be/ZKcN9mXCPP0"
 DEFAULT_DESCRIPTION = "You are actually wrong but here leaked video of lilly dancing"
 
 # The one coordinate pair that unlocks the next clue
