@@ -98,8 +98,35 @@ async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     logging.error("Unhandled error while processing an update", exc_info=context.error)
 
 def main():
-    # Token comes from the environment (Railway "Variables" tab) so it never lives in the repo
+    # Token comes from the environment (Railway "Variables" tab), local .env, key.txt, or fallback token
     TOKEN = os.environ.get("BOT_TOKEN")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    if not TOKEN:
+        env_path = os.path.join(base_dir, ".env")
+        if os.path.isfile(env_path):
+            try:
+                with open(env_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith("BOT_TOKEN="):
+                            TOKEN = line.split("=", 1)[1].strip().strip('"').strip("'")
+                            break
+            except Exception:
+                pass
+
+    if not TOKEN:
+        key_path = os.path.join(base_dir, "key.txt")
+        if os.path.isfile(key_path):
+            try:
+                with open(key_path, "r", encoding="utf-8") as f:
+                    TOKEN = f.read().strip()
+            except Exception:
+                pass
+
+    if not TOKEN:
+        TOKEN = "8722934181:AAGp8w9BXBNeS3Xyu1OA9UaXt7-BHcZnV0c"
+
     if not TOKEN:
         raise SystemExit("BOT_TOKEN environment variable is not set.")
 
