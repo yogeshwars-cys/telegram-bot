@@ -1,6 +1,8 @@
 # Telegram coordinates bot
 
-Asks for a latitude and longitude via `/start`, then replies with a link.
+Asks for a latitude and longitude via `/start`. Only the exact pair
+`43.91522763578687`, `-113.61173108716417` receives the YouTube link.
+Other coordinates receive no link.
 Uses long polling, so it runs as a worker (no web port needed).
 
 ## Configuration
@@ -12,11 +14,30 @@ Uses long polling, so it runs as a worker (no web port needed).
 
 ## Run locally
 
+From the repository folder, install the dependency:
+
 ```powershell
-pip install -r requirements.txt
-$env:BOT_TOKEN = "<your token>"
+python -m pip install -r requirements.txt
+```
+
+Create a `.env` file in this folder with one line (no quotes):
+
+```text
+BOT_TOKEN=your_token_from_BotFather
+```
+
+The `.env` file is ignored by Git. Load the token into the current PowerShell
+session and start the bot:
+
+```powershell
+$env:BOT_TOKEN = ((Get-Content .env -Raw).Trim() -replace '^BOT_TOKEN=', '')
 python bot.py
 ```
+
+Keep this terminal open while testing. In Telegram, send `/start` to your bot,
+then send `43.91522763578687` and `-113.61173108716417` as separate messages.
+The reply should contain `https://youtu.be/ZKcN9mXCPP0`. Any other valid pair
+receives a rejection without a link. Press `Ctrl+C` in the terminal to stop the bot.
 
 ## Deploy on Railway
 

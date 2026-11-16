@@ -12,14 +12,10 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 # Define conversation states
 LATITUDE, LONGITUDE = range(2)
 
-# Link handed out for any coordinates that are not the secret pair
-DEFAULT_LINK = "https://youtu.be/ZKcN9mXCPP0"
-DEFAULT_DESCRIPTION = "You are actually wrong but here leaked video of lilly dancing"
-
 # The one coordinate pair that unlocks the next clue
 SECRET_LATITUDE = 43.91522763578687
 SECRET_LONGITUDE = -113.61173108716417
-SECRET_LINK = "https://gistpad.com/catflag-84"
+SECRET_LINK = "https://youtu.be/ZKcN9mXCPP0"
 SECRET_DESCRIPTION = "go with 37 with the number where lilly is locked"
 
 # Helper function to check if the input is a valid coordinate number
@@ -70,7 +66,7 @@ async def process_longitude(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if is_valid_coordinate(user_input):
         context.user_data['longitude'] = user_input
 
-        # The secret pair unlocks a different link plus its clue
+        # Only the secret pair unlocks the link and its clue
         if is_secret_location(context.user_data['latitude'], user_input):
             await update.message.reply_text(
                 "🎉 Coordinates accepted! Here is your link:\n"
@@ -79,9 +75,7 @@ async def process_longitude(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             )
         else:
             await update.message.reply_text(
-                "🎉 Coordinates accepted! Here is your link:\n"
-                f"{DEFAULT_LINK}\n\n"
-                f"{DEFAULT_DESCRIPTION}"
+                "Coordinates not accepted. Type /start to try again."
             )
         context.user_data.clear()
         return ConversationHandler.END
