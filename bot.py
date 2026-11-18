@@ -1,13 +1,11 @@
 import logging
 import os
+from pathlib import Path
+from urllib.parse import quote
+
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
-
-# Enable logging to see errors in the console/log file
-logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
-# httpx logs full request URLs at INFO, and Telegram URLs contain the bot token
-logging.getLogger("httpx").setLevel(logging.WARNING)
 
 # Define conversation states
 LATITUDE, LONGITUDE = range(2)
@@ -17,6 +15,19 @@ SECRET_LATITUDE = 43.91522763578687
 SECRET_LONGITUDE = -113.61173108716417
 SECRET_LINK = "https://youtu.be/ZKcN9mXCPP0"
 SECRET_DESCRIPTION = "go with 37 with the number where lilly is locked"
+
+
+class TokenRedactingFormatter(logging.Formatter):
+    def __init__(self, token: str) -> None:
+        super().__init__("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        self.token = token
+        self.encoded_token = quote(token, safe="")
+
+    def format(self, record: logging.LogRecord) -> str:
+        # Format first so exception messages and chained tracebacks are redacted too.
+        message = super().format(record)
+        return message.replace(self.token, "[REDACTED]").replace(self.encoded_token, "[REDACTED]")
+
 
 # Helper function to check if the input is a valid coordinate number
 def is_valid_coordinate(text: str) -> bool:
@@ -97,38 +108,38 @@ async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Logs errors instead of letting them crash the bot."""
     logging.error("Unhandled error while processing an update", exc_info=context.error)
 
+def load_bot_token() -> str:
+    token = os.environ.get("BOT_TOKEN")
+    if token:
+        return token
+
+    base_dir = Path(__file__).resolve().parent
+    try:
+        with (base_dir / ".env").open(encoding="utf-8-sig") as env_file:
+            for line in env_file:
+                if line.strip().startswith("BOT_TOKEN="):
+                    token = line.split("=", 1)[1].strip().strip('"').strip("'")
+                    break
+    except (OSError, UnicodeError):
+        pass
+    if token:
+        return token
+
+    try:
+        return (base_dir / "key.txt").read_text(encoding="utf-8-sig").strip()
+    except (OSError, UnicodeError):
+        return ""
+
 def main():
-    # Token comes from the environment (Railway "Variables" tab), local .env, key.txt, or fallback token
-    TOKEN = os.environ.get("BOT_TOKEN")
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-
+    TOKEN = load_bot_token()
     if not TOKEN:
-        env_path = os.path.join(base_dir, ".env")
-        if os.path.isfile(env_path):
-            try:
-                with open(env_path, "r", encoding="utf-8") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line.startswith("BOT_TOKEN="):
-                            TOKEN = line.split("=", 1)[1].strip().strip('"').strip("'")
-                            break
-            except Exception:
-                pass
+        raise SystemExit("Set BOT_TOKEN in the environment or .env before starting the bot.")
 
-    if not TOKEN:
-        key_path = os.path.join(base_dir, "key.txt")
-        if os.path.isfile(key_path):
-            try:
-                with open(key_path, "r", encoding="utf-8") as f:
-                    TOKEN = f.read().strip()
-            except Exception:
-                pass
-
-    if not TOKEN:
-        TOKEN = "8722934181:AAGp8w9BXBNeS3Xyu1OA9UaXt7-BHcZnV0c"
-
-    if not TOKEN:
-        raise SystemExit("BOT_TOKEN environment variable is not set.")
+    handler = logging.StreamHandler()
+    handler.setFormatter(TokenRedactingFormatter(TOKEN))
+    logging.basicConfig(handlers=[handler], level=logging.INFO)
+    # httpx logs full request URLs at INFO, and Telegram URLs contain the bot token.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
 
     # Optional: only PythonAnywhere free accounts need a proxy (http://proxy.server:3128)
     PROXY_URL = os.environ.get("PROXY_URL")
@@ -162,4 +173,8 @@ def main():
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        logging.exception("Bot stopped due to an unexpected error")
+        raise SystemExit(1) from None
